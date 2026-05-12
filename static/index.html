@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClipAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #13131a; --card: #1a1a24; --border: #2a2a3a;
+    --accent: #ff3c6e; --accent2: #00d4ff; --text: #f0f0f8; --muted: #6b6b8a; --success: #00e599;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }
+  .header { text-align: center; margin-bottom: 48px; }
+  .badge { display: inline-flex; align-items: center; background: #ff3c6e18; border: 1px solid #ff3c6e44; border-radius: 100px; padding: 4px 14px; margin-bottom: 20px; font-size: 10px; color: var(--accent); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(36px,6vw,58px); font-weight: 800; background: linear-gradient(135deg, var(--text) 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1; }
+  .subtitle { color: var(--muted); font-size: 16px; margin-top: 10px; }
+  .input-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 24px; }
+  .input-label { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .input-row { display: flex; gap: 10px; margin-top: 10px; }
+  input[type=text] { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: var(--text); font-size: 14px; outline: none; font-family: 'DM Sans', sans-serif; transition: border-color .2s; }
+  input[type=text]:focus { border-color: var(--accent); }
+  .btn { background: linear-gradient(135deg, var(--accent), #ff6b9d); border: none; color: white; border-radius: 12px; padding: 12px 22px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif; white-space: nowrap; transition: opacity .2s; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.secondary { background: #ffffff0a; border: 1px solid var(--border); color: var(--muted); }
+  .progress-wrap { margin-top: 16px; }
+  .progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; color: var(--muted); }
+  .progress-pct { color: var(--accent); font-weight: 700; }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width .3s ease; }
+  .error { background: #ff3c6e11; border: 1px solid #ff3c6e44; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; color: var(--accent); font-size: 13px; }
+  .stats { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .stat-val { font-size: 22px; font-weight: 800; font-family: 'Syne', sans-serif; color: var(--accent); }
+  .stat-title { flex: 1; min-width: 200px; }
+  .stat-title .stat-val { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .clips { display: flex; flex-direction: column; gap: 14px; }
+  .clip { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; position: relative; overflow: hidden; transition: all .2s; }
+  .clip:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 32px #ff3c6e44; }
+  .clip-line { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: .6; }
+  .clip-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .clip-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .clip-type { border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border: 1px solid; }
+  .clip-type.viral { background: #ff3c6e22; border-color: #ff3c6e; color: #ff3c6e; }
+  .clip-type.funny { background: #ffd60022; border-color: #ffd600; color: #ffd600; }
+  .clip-type.emotional { background: #a855f722; border-color: #a855f7; color: #a855f7; }
+  .clip-type.debate { background: #00d4ff22; border-color: #00d4ff; color: #00d4ff; }
+  .clip-type.highlight { background: #00e59922; border-color: #00e599; color: #00e599; }
+  .clip-dur { background: #ffffff0a; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 2px 10px; font-size: 11px; }
+  .clip-num { color: var(--muted); font-size: 12px; font-family: monospace; background: #ffffff08; padding: 3px 8px; border-radius: 6px; }
+  .clip-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+  .clip-reason { color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+  .clip-bottom { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .timestamps { display: flex; gap: 6px; align-items: center; background: #ffffff08; border-radius: 8px; padding: 6px 12px; }
+  .ts-start { color: var(--accent); font-size: 13px; font-weight: 700; }
+  .ts-arrow { color: var(--muted); font-size: 12px; }
+  .ts-end { color: var(--accent2); font-size: 13px; font-weight: 700; }
+  .clip-actions { display: flex; gap: 8px; }
+  .btn-watch { background: #ff000022; border: 1px solid #ff000055; color: #ff4444; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+  .btn-copy { background: #ffffff0a; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .btn-copy.copied { background: #00e59922; border-color: var(--success); color: var(--success); }
+  .tip { margin-top: 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; display: flex; gap: 10px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .empty { text-align: center; padding: 48px 20px; }
+  .empty-icon { width: 72px; height: 72px; border-radius: 50%; background: #ff3c6e15; border: 1px solid #ff3c6e30; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { display: inline-block; animation: spin 1s linear infinite; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="badge">✦ Powered by Claude AI</div>
+    <h1>ClipAI</h1>
+    <p class="subtitle">Pegá el link de tu stream y la IA detecta los mejores momentos para clips</p>
+  </div>
+
+  <div class="input-box">
+    <div class="input-label">Link de YouTube</div>
+    <div class="input-row">
+      <input type="text" id="urlInput" placeholder="https://youtube.com/live/... o watch?v=..." />
+      <button class="btn" id="mainBtn" onclick="handleClick()">Generar clips ✦</button>
+    </div>
+    <div class="progress-wrap hidden" id="progressWrap">
+      <div class="progress-header">
+        <span><span class="spin">⟳</span> IA analizando momentos virales...</span>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="error hidden" id="errorBox"></div>
+
+  <div id="results" class="hidden">
+    <div class="stats">
+      <div class="stat stat-title">
+        <div>
+          <div class="stat-label">Video analizado</div>
+          <div class="stat-val" id="statTitle">—</div>
+        </div>
+      </div>
+      <div class="stat">
+        <span style="font-size:22px">✂</span>
+        <div>
+          <div class="stat-label">Clips detectados</div>
+          <div class="stat-val" id="statClips">0</div>
+        </div>
+      </div>
+      <div class="stat">
+        <span style="font-size:22px">🔥</span>
+        <div>
+          <div class="stat-label">Score viral</div>
+          <div class="stat-val" id="statScore" style="color:var(--success)">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="clips" id="clipsContainer"></div>
+    <div class="tip">
+      <span style="font-size:18px;flex-shrink:0">💡</span>
+      Hacé clic en <strong style="color:var(--text)">Ver momento</strong> para ir al instante en YouTube. Para descargar usá <strong style="color:var(--text)">yt-dlp</strong> con los timestamps.
+    </div>
+  </div>
+
+  <div class="empty" id="emptyState">
+    <div class="empty-icon">✂</div>
+    <p style="color:var(--muted);font-size:15px">Pegá el link de tu stream de YouTube para empezar</p>
+    <p style="color:#6b6b8a88;font-size:13px;margin-top:6px">Compatible con youtube.com/watch, youtu.be y youtube.com/live</p>
+  </div>
+</div>
+
+<script>
+let state = 'idle';
+let progressInterval;
+let currentVideoId = null;
+
+function extractVideoId(url) {
+  if (!url) return null;
+  const trimmed = url.trim();
+  try {
+    const u = new URL(trimmed.startsWith('http') ? trimmed : 'https://' + trimmed);
+    const v = u.searchParams.get('v');
+    if (v) return v;
+    const m = u.pathname.match(/\/(?:live|embed|shorts|v)\/([a-zA-Z0-9_-]{11})/) ||
+              u.pathname.match(/\/([a-zA-Z0-9_-]{11})$/);
+    if (m) return m[1];
+  } catch(e) {}
+  const patterns = [/[?&]v=([a-zA-Z0-9_-]{11})/, /youtu\.be\/([a-zA-Z0-9_-]{11})/, /youtube\.com\/(?:live|embed|shorts|v)\/([a-zA-Z0-9_-]{11})/, /^([a-zA-Z0-9_-]{11})$/];
+  for (const p of patterns) { const m = trimmed.match(p); if (m) return m[1]; }
+  return null;
+}
+
+function formatTime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function startProgress(target, speed) {
+  let p = 0;
+  clearInterval(progressInterval);
+  document.getElementById('progressWrap').classList.remove('hidden');
+  progressInterval = setInterval(() => {
+    if (p >= target) { clearInterval(progressInterval); return; }
+    p++;
+    document.getElementById('progressFill').style.width = p + '%';
+    document.getElementById('progressPct').textContent = p + '%';
+  }, speed);
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = '⚠ ' + msg;
+  el.classList.remove('hidden');
+}
+
+function handleClick() {
+  if (state === 'done') { reset(); return; }
+  analyze();
+}
+
+async function analyze() {
+  const url = document.getElementById('urlInput').value;
+  const vid = extractVideoId(url);
+  if (!vid) { showError('No se reconoció el link. Asegurate de pegar el link completo de YouTube.'); return; }
+
+  state = 'analyzing';
+  currentVideoId = vid;
+  document.getElementById('errorBox').classList.add('hidden');
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('mainBtn').disabled = true;
+  document.getElementById('mainBtn').textContent = 'Analizando...';
+  startProgress(90, 40);
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video_id: vid })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    clearInterval(progressInterval);
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('progressPct').textContent = '100%';
+
+    renderResults(data);
+    state = 'done';
+    document.getElementById('mainBtn').textContent = '← Nuevo';
+    document.getElementById('mainBtn').disabled = false;
+    document.getElementById('mainBtn').className = 'btn secondary';
+  } catch(err) {
+    clearInterval(progressInterval);
+    document.getElementById('progressWrap').classList.add('hidden');
+    showError('Error: ' + (err.message || 'intentá de nuevo'));
+    state = 'idle';
+    document.getElementById('mainBtn').disabled = false;
+    document.getElementById('mainBtn').textContent = 'Generar clips ✦';
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('statTitle').textContent = data.videoTitle || 'Tu Stream';
+  document.getElementById('statClips').textContent = (data.clips || []).length;
+  document.getElementById('statScore').textContent = (data.viralScore || 0) + '/100';
+
+  const container = document.getElementById('clipsContainer');
+  container.innerHTML = '';
+  (data.clips || []).forEach((clip, i) => {
+    const ytLink = `https://youtube.com/watch?v=${currentVideoId}&t=${clip.startSeconds}s`;
+    const duration = clip.endSeconds - clip.startSeconds;
+    container.innerHTML += `
+      <div class="clip">
+        <div class="clip-line"></div>
+        <div class="clip-top">
+          <div class="clip-badges">
+            <span class="clip-type ${clip.type}">${clip.type}</span>
+            <span class="clip-dur">⏱ ${duration}s</span>
+          </div>
+          <span class="clip-num">#${String(i+1).padStart(2,'0')}</span>
+        </div>
+        <div class="clip-title">${clip.title}</div>
+        <div class="clip-reason">${clip.reason}</div>
+        <div class="clip-bottom">
+          <div class="timestamps">
+            <span class="ts-start">${formatTime(clip.startSeconds)}</span>
+            <span class="ts-arrow">→</span>
+            <span class="ts-end">${formatTime(clip.endSeconds)}</span>
+          </div>
+          <div class="clip-actions">
+            <a class="btn-watch" href="${ytLink}" target="_blank">▶ Ver momento</a>
+            <button class="btn-copy" onclick="copyLink(this,'${ytLink}')">⎘ Link</button>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('results').classList.remove('hidden');
+}
+
+function copyLink(btn, link) {
+  navigator.clipboard.writeText(link);
+  btn.textContent = '✓ Copiado';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = '⎘ Link'; btn.classList.remove('copied'); }, 2000);
+}
+
+function reset() {
+  state = 'idle';
+  currentVideoId = null;
+  document.getElementById('urlInput').value = '';
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('errorBox').classList.add('hidden');
+  document.getElementById('progressWrap').classList.add('hidden');
+  document.getElementById('emptyState').classList.remove('hidden');
+  document.getElementById('mainBtn').textContent = 'Generar clips ✦';
+  document.getElementById('mainBtn').className = 'btn';
+  document.getElementById('mainBtn').disabled = false;
+}
+
+document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter' && state === 'idle') analyze(); });
+</script>
+</body>
+</html>
